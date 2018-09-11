@@ -1,0 +1,51 @@
+<html>
+<body>
+  <input type="file" id="file">
+  <button id="submit">submit</button>
+
+<script>
+
+function UpladFile() {
+    var fileObj = document.getElementById("file").files[0];
+    var url =  "http://localhost:7001/upload";
+
+    var form = new FormData();
+    form.append("file", fileObj); 
+
+    xhr = new XMLHttpRequest();
+    // xhr.setRequestHeader('x-csrf-token', csrftoken);
+    xhr.open("post", url, true);
+    xhr.onload = uploadComplete;
+
+    xhr.upload.onloadstart = function(){
+        ot = new Date().getTime();
+        oloaded = 0;
+    };
+
+    xhr.send(form);
+}
+
+function uploadComplete(evt) {
+    var data = JSON.parse(evt.target.responseText);
+    console.log(data)
+    if(data.code === 200) {
+        alert("上传成功！");
+    }else{
+        alert("上传失败！");
+    }
+}
+function uploadFailed(evt) {
+    alert("上传失败！");
+}
+function cancleUploadFile(){
+    xhr.abort();
+}
+</script>
+  <script>
+    var btn = document.getElementById('submit');
+    btn.addEventListener('click', function() {
+      UpladFile()
+    })
+  </script>
+</body>
+</html>
