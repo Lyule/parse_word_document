@@ -16,14 +16,11 @@ const TextRegExp = /<w:t[\s\S]*?>([\s\S]*?)<\/w:t>/ig;
 
 async function getJson(pathname) {
   const { zippath } = parsePathname(pathname);
-
   await fs.renameSync(pathname, zippath);
-
   const zip = new AdmZip(zippath);
   const contentXml = zip.readAsText('word/document.xml'); // 将document.xml读取为text内容；
   const json = parseXML(contentXml);
   await fs.renameSync(zippath, pathname);
-  console.log(json);
   return json;
 }
 
@@ -59,21 +56,43 @@ function parseXML(wordDocXml) {
   const json = [];
   let jsonIndex = 0;
   parseWordXML(wordDocXml).forEach(item => {
+    // 解析行
+    const trXmls = parseTblXML(item);
+    if (trXmls.length < 2) {
+      throw new Error('This document is not properly formatted', 'There are not enough rows in the table');
+    }
+
     // 是否为多选题
     const multipleChoice = isMultipleChoice(item);
-    const trXmls = parseTblXML(item);
+
     trXmls.forEach((trXml, trIndex) => {
+      // 表头省略
       if (trIndex === 0) return;
-      const examQuestion = Object.create({});
+
+      const examQuestion = Object.create(null);
       examQuestion.isMultipleChoice = multipleChoice;
       const tcXmls = parseTrXML(trXml);
-      examQuestion.id = parseTpXML(parseTcXML(tcXmls[0])[0]);
-      // parseTpXML(parseTcXML(tcXml)[tcIndex])
+      // 解析行中列文字的格式：parseTpXML(parseTcXML(tcXml)[trIndex])
+      const id = parseTpXML(parseTcXML(tcXmls[0])[0]);
+      if (!id) {
+        throw new Error('This document is not properly formatted', 'tr\'s id was not found');
+      }
+      examQuestion.id = id;
+
+      // 解析题目
       const testQuestion = parseTestQuestion(tcXmls[1]);
+      if (testQuestion.length < 5) {
+        throw new Error('This document is not properly formatted', 'tr\'s question format is not up to scratch');
+      }
+
+      // 题目为第一行
       examQuestion.title = testQuestion.shift();
 
-      // answer string
+      // 解析答案
       const testAnswerStr = parseTestAnswer(tcXmls[2]);
+      if (!testAnswerStr) {
+        throw new Error('This document is not properly formatted', 'tr\'s answer was not found');
+      }
       const options = [];
       testQuestion.forEach(item => {
         const optionId = item.substring(0, 1);
@@ -95,7 +114,14 @@ function parseXML(wordDocXml) {
 }
 
 function isMultipleChoice(tblXml) {
-  return parseTpXML(parseTcXML(parseTrXML(parseTblXML(tblXml)[0])[0])[0]) === '多选题';
+  const tableType = parseTpXML(parseTcXML(parseTrXML(parseTblXML(tblXml)[0])[0])[0]);
+  if (tableType === '多选题') {
+    return true;
+  } else if (tableType === '单选题') {
+    return false;
+  }
+
+  throw new Error('Incorrect table headings');
 }
 
 function parseTestQuestion(tcXml) {
@@ -115,6 +141,11 @@ function parseTestAnswer(tcXml) {
 
 function parseWordXML(xml) {
   const tblArr = [];
+  const tblXml = xml.match(TblRegExp);
+  if (tblXml.length < 1) {
+    throw new Error('This document is not properly formatted');
+  }
+
   xml.match(TblRegExp).forEach(item => tblArr.push(item));
   return tblArr;
 }
@@ -145,7 +176,7 @@ function parseTpXML(tpXml) {
       text += p.replace(/<w:t[\s\S]*?>([\s\S]*?)<\/w:t>/ig, '$1');
     });
   } catch (err) {
-    console.log(err);
+    throw new Error(err);
   }
   return text;
 }

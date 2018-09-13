@@ -1,7 +1,5 @@
 'use strict';
 
-const path = require('path')
-
 module.exports = appInfo => {
   const config = exports = {};
 
@@ -12,8 +10,8 @@ module.exports = appInfo => {
   config.middleware = [];
 
   config.multipart = {
-    fileExtensions: [ '.apk', '.pptx', '.docx', '.csv', '.doc', '.ppt', '.pdf', '.pages', '.wav', '.mov' ], // 增加对 .apk 扩展名的支持
-  }
+    fileExtensions: [ '.docx', '.doc' ], // 增加对 .apk 扩展名的支持
+  };
 
   config.view = {
     defaultViewEngine: 'nunjucks',
@@ -24,7 +22,7 @@ module.exports = appInfo => {
   };
 
   config.security = {
-    csrf: false
+    csrf: false,
   };
 
   return config;

@@ -1,6 +1,6 @@
 <html>
 <body>
-  <input type="file" id="file">
+  <input type="file" id="file" accept=".doc,.docx">
   <button id="submit">submit</button>
 
 <script>
@@ -28,7 +28,7 @@ function UpladFile() {
 function uploadComplete(evt) {
     var data = JSON.parse(evt.target.responseText);
     console.log(data)
-    if(data.code === 200) {
+    if(data) {
         alert("上传成功！");
     }else{
         alert("上传失败！");
