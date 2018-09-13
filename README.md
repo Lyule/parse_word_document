@@ -1,7 +1,17 @@
 # parseWordDocument
 
-Parse the word document form tool in the egg framework
+Parse the microsoft word document form tool in the egg framework
 
+## file limit
+
+1. 使用表格布局
+2. 每个表格第一行， 文字应为 ‘单选题’ 或者 ‘多选题’
+3. 每个表格除了第一行，要有题目序号，题目问题以及题目答案
+4. 题目+答案不应少于5行
+
+格式如下图示例
+
+<img src="./assets/fileLimit.png" >
 
 ## QuickStart
 
